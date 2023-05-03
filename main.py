@@ -2,11 +2,7 @@ import requests
 import json
 import csv
 import os
-
-fileout = 'output/output.csv'
-if os.path.exists(fileout):
-    os.remove(fileout)
-    # Berlin, Hong Kong, Beijing, Grumantbreen, Hammarfest, Nguru, cape town, punta arenas, cuiaba, dariyah, mumbai, sangla, bankok
+# Berlin, Hong Kong, Beijing, Grumantbreen, Hammerfest, Nguru, cape town, punta arenas, cuiaba, dariyah, mumbai, sangla, bankok
 cities = [[52.52, 13.41], [22.27, 114.17], [39.90, 116.39], [78.15, 15.23], [70.68, 23.67], [12.87, 10.45], [-33.92, 18.42], [-53.14, -70.91], [-15.59, -56.09], [24.73, 42.91], [19.07, 72.88], [31.42, 26.20], [13.75, 100.50] ]
 users = [{'sandalUser': True, 'shortUser': True, 'capUser': True, 'userPlace': 5, 'userTemp': 3},
          {'sandalUser': False, 'shortUser': False, 'capUser': False, 'userPlace': -5, 'userTemp': 3},
@@ -14,6 +10,23 @@ users = [{'sandalUser': True, 'shortUser': True, 'capUser': True, 'userPlace': 5
          {'sandalUser': False, 'shortUser': True, 'capUser': False, 'userPlace': -5, 'userTemp': -3},
          {'sandalUser': False, 'shortUser': False, 'capUser': False, 'userPlace': 5, 'userTemp': -3},
          {'sandalUser': False, 'shortUser': False, 'capUser': False, 'userPlace': -5, 'userTemp': -3}]
+def getCities(cities):
+    data = []
+    for city in cities:
+        url = "https://geocoding-api.open-meteo.com/v1/search?name=" + city + "&count=100&language=en&format=json"
+        response = requests.get(url)
+        jsonResponse = json.loads(response.content)['results']
+
+        for i in range(len(jsonResponse)):
+            data.append([jsonResponse[i]['latitude'], jsonResponse[i]['latitude']])
+    return data
+
+
+fileout = 'output/output.csv'
+if os.path.exists(fileout):
+    os.remove(fileout)
+
+
 #apperent_temperature, pricipitation_probability
 def recommender(temp, rain_prop, sandalUser, shortUser, capUser, userOffset):
     rain = False
@@ -94,8 +107,8 @@ def recommender(temp, rain_prop, sandalUser, shortUser, capUser, userOffset):
 def writetoFile(data):
     fieldnames = ['apparent_temperature', 'temperature_2m', 'relativehumidity_2m', 'windspeed_10m',
                   'precipitation_probability', 'direct_radiation',
-                  'head', 'shirt', 'jacket', 'pants', 'shoes', 'umbrella',
-                  'sandalUser', 'shortUser', 'capUser', 'userPlace', 'userTemp']
+                  'sandalUser', 'shortUser', 'capUser', 'userPlace', 'userTemp',
+                  'head', 'shirt', 'jacket', 'pants', 'shoes', 'umbrella',]
     if os.path.exists(fileout):
        with open(fileout, 'r') as infile, open(fileout, 'a', newline='') as outfile:
            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
@@ -108,8 +121,8 @@ def writetoFile(data):
             for row in data:
                 writer.writerow(row)
 def getWeather(lat, long):
-    url = "https://api.open-meteo.com/v1/forecast?latitude=" + str(lat) + "&longitude=" + str(long) + "&hourly=temperature_2m"
-    response = requests.get('https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&forecast_days=1&hourly=apparent_temperature,temperature_2m,relativehumidity_2m,windspeed_10m,precipitation_probability,direct_radiation')
+    url = "https://api.open-meteo.com/v1/forecast?latitude=" + str(lat) + "&longitude=" + str(long) + "&forecast_days=1&hourly=apparent_temperature,temperature_2m,relativehumidity_2m,windspeed_10m,precipitation_probability,direct_radiation"
+    response = requests.get(url)
     jsonResponse = json.loads(response.content)['hourly']
     apparent_temperature = jsonResponse['apparent_temperature']
     temperature_2m = jsonResponse['temperature_2m']
@@ -127,5 +140,9 @@ def getWeather(lat, long):
                          'umbrella': clothingRec['umbrella'],
                          'sandalUser': user['sandalUser'], 'shortUser': user['shortUser'], 'capUser': user['capUser'], 'userPlace': user['userPlace'], 'userTemp':  user['userTemp']})
     writetoFile(data)
+cities = getCities(['Berlin', 'Hong Kong', 'Beijing', 'Grumantbreen', 'Hammerfest', 'Nguru', 'cape town', 'punta arenas', 'cuiaba', 'dariyah', 'mumbai',
+                    'sangla', 'bankok', 'Stockholm', 'Rome', 'Kano', 'Lagos', 'Kigali', 'Teheran', 'Chatanga', 'Phnom Penh', 'Paris', 'Brussels', 'München',
+                    'Dublin', 'Calgary', 'Buenos Aires', 'test', 'Porto Alegre', 'Chennai', 'La Paz', 'El Alto', 'Potosi', 'Monrovia', 'Hilo', 'Quibdó', 'López de Micay',
+                    'Seattle', 'Manchester'])
 for city in cities:
     getWeather(city[0], city[1])
